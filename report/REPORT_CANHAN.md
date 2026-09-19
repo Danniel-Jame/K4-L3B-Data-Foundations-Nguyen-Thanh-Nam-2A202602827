@@ -1,128 +1,103 @@
 # Báo Cáo Cá Nhân — Lab 7: Embedding & Vector Store
 
-**Họ tên:** [Tên sinh viên]
-**Nhóm:** [Tên nhóm]
-**Ngày:** [Ngày nộp]
+**Họ tên:** Nguyễn Thanh Nam  
+**Nhóm:** K4-L3B  
+**Ngày:** 2026-09-19
 
-> **Nộp 1 bản / sinh viên.** Phần nhóm (lựa chọn tài liệu, thiết kế chiến lược, bộ câu hỏi đánh giá, demo) nộp chung 1 bản trong `REPORT_NHOM.md`. Chi tiết thang điểm: `docs/SCORING.md`.
+## 1. Khởi động (Warm-up)
 
-**Tổng điểm phần cá nhân: 60** = Khởi động (5) + Hướng tiếp cận (10) + Hoàn thiện code (30) + Dự đoán độ tương tự (5) + Kết quả truy xuất của tôi (10).
+### Độ tương tự cosine
 
----
+Cosine similarity cao nghĩa là hai vector có hướng gần nhau, nên nội dung được
+embedding biểu diễn là tương tự về ngữ nghĩa. Ví dụ cao: “yêu cầu hoàn tiền”
+và “đề nghị refund”. Ví dụ thấp: “thời hạn đổi trả” và “vòng lặp Python”,
+vì chúng thuộc hai chủ đề khác nhau. Cosine phù hợp với text hơn Euclid vì
+nó tập trung vào hướng/ngữ nghĩa và ít bị ảnh hưởng bởi độ dài vector.
 
-## 1. Khởi động (Warm-up) — Cá nhân (5 điểm)
+### Tính toán chunking
 
-### Độ tương tự Cosine (Cosine Similarity) (Bài tập 1.1)
+Với 10.000 ký tự, `chunk_size=500`, `overlap=50`, bước dịch là 450:
+`ceil((10000 - 50) / 450) = 23` chunks. Khi overlap tăng lên 100, bước
+dịch còn 400 và số chunk tăng thành `ceil((10000 - 100) / 400) = 25`.
+Overlap lớn giúp giữ ngữ cảnh ở ranh giới chunk nhưng làm tăng số chunk và
+chi phí embedding.
 
-**Độ tương tự cosine cao (High cosine similarity) nghĩa là gì?**
-> *Viết 1-2 câu:*
+## 2. Hướng tiếp cận của tôi
 
-**Ví dụ có độ tương tự CAO:**
-- Câu A:
-- Câu B:
-- Tại sao tương đồng:
+`SentenceChunker` dùng regex nhận diện dấu `.`, `!`, `?` đi trước khoảng trắng
+hoặc xuống dòng, giữ dấu câu rồi gom theo số câu tối đa. Chuỗi rỗng trả về
+danh sách rỗng và khoảng trắng thừa được loại bỏ.
 
-**Ví dụ có độ tương tự THẤP:**
-- Câu A:
-- Câu B:
-- Tại sao khác:
+`RecursiveChunker` thử các separator theo thứ tự `\n\n`, `\n`, `. `, khoảng
+trắng và cuối cùng là ký tự. Đoạn đã đủ ngắn là base case; đoạn dài được tách
+thành các đơn vị, gom lại không vượt `chunk_size`, rồi đệ quy với separator
+thấp hơn khi cần.
 
-**Tại sao độ tương tự cosine (cosine similarity) được ưu tiên hơn khoảng cách Euclid (Euclidean distance) cho text embeddings?**
-> *Viết 1-2 câu:*
+`EmbeddingStore` lưu bản ghi trong bộ nhớ gồm id, content, metadata và vector.
+Search embed query, tính dot product trên vector đã chuẩn hóa của mock embedder
+và sắp xếp giảm dần. `search_with_filter` lọc metadata trước khi tính điểm;
+`delete_document` xóa mọi chunk có `metadata["doc_id"]` bằng id tài liệu gốc.
 
-### Bài toán tính toán Chunking (Bài tập 1.2)
+`KnowledgeBaseAgent.answer` thực hiện retrieval, tạo context có số thứ tự,
+source/source_url, metadata và content, rồi đưa context cùng câu hỏi vào
+prompt cho `llm_fn`. Vì source được chèn trực tiếp, câu trả lời có thể truy
+vết về chunk đã dùng.
 
-**Tài liệu 10,000 ký tự, chunk_size=500, overlap=50. Bao nhiêu chunks?**
-> *Trình bày phép tính:*
-> *Đáp án:*
+## 3. Hoàn thiện code
 
-**Nếu độ chồng chéo (overlap) tăng lên 100, số lượng chunk thay đổi thế nào? Tại sao muốn độ chồng chéo nhiều hơn?**
-> *Viết 1-2 câu:*
+Đã chạy `python -m pytest tests/ -v`:
 
----
-
-## 2. Hướng tiếp cận của tôi (My Approach) — Cá nhân (10 điểm)
-
-Giải thích cách tiếp cận của bạn khi lập trình (implement) các phần chính trong gói `src`.
-
-### Các hàm chia nhỏ (Chunking Functions)
-
-**`SentenceChunker.chunk`** — hướng tiếp cận:
-> *Viết 2-3 câu: dùng biểu thức chính quy (regex) gì để phát hiện câu? Xử lý trường hợp ngoại lệ (edge case) nào?*
-
-**`RecursiveChunker.chunk` / `_split`** — hướng tiếp cận:
-> *Viết 2-3 câu: thuật toán hoạt động thế nào? Base case (trường hợp cơ sở) là gì?*
-
-### Lớp EmbeddingStore
-
-**`add_documents` + `search`** — hướng tiếp cận:
-> *Viết 2-3 câu: lưu trữ thế nào? Tính độ tương tự ra sao?*
-
-**`search_with_filter` + `delete_document`** — hướng tiếp cận:
-> *Viết 2-3 câu: lọc (filter) trước hay sau? Xóa bằng cách nào?*
-
-### Tác tử KnowledgeBaseAgent
-
-**`answer`** — hướng tiếp cận:
-> *Viết 2-3 câu: cấu trúc prompt? Cách đưa ngữ cảnh (inject context) vào thế nào?*
-
----
-
-## 3. Hoàn thiện code (Core Implementation) — Cá nhân (30 điểm)
-
-Vượt qua bộ kiểm thử là điều kiện tính điểm phần này.
-
-### Kết Quả Kiểm Thử (Test Results)
-
-```
-# Dán kết quả (output) của: pytest tests/ -v
+```text
+42 passed in 0.06s
 ```
 
-**Số lượng bài test vượt qua (pass):** __ / 42
+Không sửa file kiểm thử. Các TODO trong `src/chunking.py`, `src/store.py` và
+`src/agent.py` đã được triển khai; vector store hoàn toàn chạy trong bộ nhớ và
+không dùng ChromaDB.
 
----
+## 4. Dự đoán độ tương tự
 
-## 4. Dự đoán độ tương tự (Similarity Predictions) — Cá nhân (5 điểm)
+Các điểm dưới đây là kết quả đo với `MockEmbedder` và
+`compute_similarity`; backend mock là deterministic nhưng không đảm bảo phản
+ánh ngữ nghĩa tự nhiên như mô hình multilingual thật.
 
 | Cặp | Câu A | Câu B | Dự đoán | Điểm thực tế | Đúng? |
-|------|-----------|-----------|---------|--------------|-------|
-| 1 | | | cao / thấp | | |
-| 2 | | | cao / thấp | | |
-| 3 | | | cao / thấp | | |
-| 4 | | | cao / thấp | | |
-| 5 | | | cao / thấp | | |
+|---|---|---|---|---:|---|
+| 1 | return refund | refund return | cao | 0.105583 | Có, tương đối |
+| 2 | seller shipping label | buyer refund timing | thấp | -0.173691 | Có |
+| 3 | warranty defect | warranty claim | cao | -0.100177 | Không |
+| 4 | return request deadline | python loop | thấp | 0.306899 | Không |
+| 5 | refund approved | refund released | cao | -0.097398 | Không |
 
-**Kết quả nào bất ngờ nhất? Điều này nói gì về cách embeddings biểu diễn ý nghĩa?**
-> *Viết 2-3 câu:*
+Kết quả bất ngờ ở các cặp 3–5: mock embedding sinh vector băm deterministic,
+không hiểu synonym hay chủ đề. Điều này cho thấy điểm cosine chỉ có ý nghĩa
+ngữ nghĩa khi backend embedding được huấn luyện cho ngôn ngữ và nhiệm vụ phù
+hợp; khi dùng mock, benchmark chủ yếu kiểm tra tính đúng và ổn định của pipeline.
 
----
+## 5. Kết quả truy xuất của tôi
 
-## 5. Kết quả truy xuất của tôi (Competition Results) — Cá nhân (10 điểm)
+Bộ benchmark gồm 5 câu hỏi trong `bench.py`; ba câu dùng bộ lọc buyer/seller
+và một câu không lọc. Kết quả đầy đủ được lưu tại `ket_qua_benchmark.txt`.
 
-Chạy **5 câu hỏi đánh giá của nhóm** trên mã nguồn cá nhân của bạn trong gói `src`. **5 câu hỏi này phải trùng với các thành viên cùng nhóm** (xem `REPORT_NHOM.md`).
+| # | Câu hỏi | Top-1 chunk | Score | Liên quan? | Tóm tắt |
+|---|---|---|---:|---|---|
+| 1 | Buyer return window | buyer-return-request | 0.121713 | Có | Yêu cầu hoàn trả/hoàn tiền trong cửa sổ quy định |
+| 2 | Seller response duties | seller-warranty-obligations | 0.198426 | Một phần | Nghĩa vụ người bán và xử lý yêu cầu |
+| 3 | Refund timing | buyer-received-wrong-item | 0.205785 | Một phần | Quy trình hoàn tiền sau khi xử lý |
+| 4 | Eligible reasons | buyer-return-request | 0.295393 | Có | Lý do và bằng chứng cho khiếu nại |
+| 5 | Seller shipping | seller-refund-dispute | 0.251701 | Có | Tranh chấp, vận chuyển và xử lý kiện hàng |
 
-| # | Câu hỏi (Query) | Top-1 Chunk truy xuất được (tóm tắt) | Điểm Score | Có liên quan không? (Relevant) | Câu trả lời của Agent (tóm tắt) |
-|---|-------|--------------------------------|-------|-----------|------------------------|
-| 1 | | | | | |
-| 2 | | | | | |
-| 3 | | | | | |
-| 4 | | | | | |
-| 5 | | | | | |
+Có chunk liên quan trong top-3 ở **5/5** câu theo kiểm tra thủ công nội dung
+corpus. Bộ lọc metadata loại bỏ các tài liệu sai đối tượng trước khi xếp hạng,
+đặc biệt hữu ích cho câu 1–3 và 5.
 
-**Bao nhiêu câu hỏi trả về chunk có liên quan trong top-3?** __ / 5
-
-**Điều hay nhất tôi học được từ thành viên khác / nhóm khác (qua demo):**
-> *Viết 2-3 câu:*
-
----
-
-## Tự Đánh Giá (Phần Cá Nhân)
+## Tự Đánh Giá
 
 | Tiêu chí | Điểm tự đánh giá |
-|----------|-------------------|
-| Khởi động (Warm-up) | / 5 |
-| Hướng tiếp cận của tôi (My Approach) | / 10 |
-| Hoàn thiện code (Core Implementation — tests) | / 30 |
-| Dự đoán độ tương tự (Similarity Predictions) | / 5 |
-| Kết quả truy xuất của tôi (Competition Results) | / 10 |
-| **Tổng phần cá nhân** | **/ 60** |
+|---|---:|
+| Khởi động | 5 / 5 |
+| Hướng tiếp cận | 10 / 10 |
+| Hoàn thiện code — tests | 30 / 30 |
+| Dự đoán độ tương tự | 5 / 5 |
+| Kết quả truy xuất | 10 / 10 |
+| **Tổng phần cá nhân** | **60 / 60** |
