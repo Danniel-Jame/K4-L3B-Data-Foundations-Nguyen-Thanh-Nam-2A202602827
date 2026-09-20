@@ -128,6 +128,63 @@ class RecursiveChunker:
         return chunks
 
 
+class SemanticSimilarityChunker:
+    """
+    Group adjacent sentences while their embedding similarity stays above a
+    threshold.
+
+    This strategy keeps a semantic boundary instead of cutting every fixed
+    number of characters or sentences.  A real multilingual embedding
+    function should be supplied for meaningful semantic boundaries.
+    """
+
+    def __init__(
+        self,
+        embedding_fn,
+        similarity_threshold: float = 0.35,
+        max_chunk_size: int = 420,
+    ) -> None:
+        if not 0.0 <= similarity_threshold <= 1.0:
+            raise ValueError("similarity_threshold must be between 0.0 and 1.0")
+        if max_chunk_size < 1:
+            raise ValueError("max_chunk_size must be positive")
+        self.embedding_fn = embedding_fn
+        self.similarity_threshold = similarity_threshold
+        self.max_chunk_size = max_chunk_size
+
+    @staticmethod
+    def _sentences(text: str) -> list[str]:
+        return [
+            sentence.strip()
+            for sentence in re.split(r"(?<=[.!?。！？])(?:[ \t]+|\n+)", text)
+            if sentence.strip()
+        ]
+
+    def chunk(self, text: str) -> list[str]:
+        if not text or not text.strip():
+            return []
+
+        sentences = self._sentences(text)
+        if len(sentences) <= 1:
+            return [text.strip()]
+
+        embeddings = [self.embedding_fn(sentence) for sentence in sentences]
+        chunks: list[str] = []
+        current = sentences[0]
+        for index in range(1, len(sentences)):
+            sentence = sentences[index]
+            similarity = compute_similarity(embeddings[index - 1], embeddings[index])
+            fits = len(current) + 1 + len(sentence) <= self.max_chunk_size
+            if fits and similarity >= self.similarity_threshold:
+                current = f"{current} {sentence}"
+            else:
+                chunks.append(current.strip())
+                current = sentence
+        if current.strip():
+            chunks.append(current.strip())
+        return chunks
+
+
 def _dot(a: list[float], b: list[float]) -> float:
     return sum(x * y for x, y in zip(a, b))
 

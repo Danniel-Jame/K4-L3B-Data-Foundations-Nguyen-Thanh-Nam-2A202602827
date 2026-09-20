@@ -1,37 +1,48 @@
-﻿Corpus documents: 7
+﻿=== Semantic Similarity Chunking ===
+Embedding backend: mock fallback (not semantic)
+Parameters: threshold=0.35, max_chunk_size=420
+
+=== Baseline vs semantic statistics ===
+buyer-return-request.md:
+  fixed_size: count=2, avg_length=289.0
+  by_sentences: count=2, avg_length=263.0
+  recursive: count=2, avg_length=263.0
+  semantic_similarity: count=5, avg_length=104.6
+buyer-refund-processing.md:
+  fixed_size: count=2, avg_length=264.0
+  by_sentences: count=2, avg_length=238.0
+  recursive: count=2, avg_length=238.0
+  semantic_similarity: count=4, avg_length=118.5
+seller-return-handling.md:
+  fixed_size: count=2, avg_length=279.0
+  by_sentences: count=2, avg_length=253.0
+  recursive: count=2, avg_length=253.0
+  semantic_similarity: count=3, avg_length=168.3
+
+Corpus documents: 7
 Indexed chunks: 29
 
-1. Buyer return window
-Query: How long does a buyer have to request a return or refund?
-Metadata filter: {'audience': 'buyer'}
+1. Buyer return window | filter={'audience': 'buyer'}
   1. score=0.353310 source_id=buyer-return-request chunk_id=buyer-return-request#2
   2. score=0.319064 source_id=buyer-return-request chunk_id=buyer-return-request#3
   3. score=0.273727 source_id=buyer-received-wrong-item chunk_id=buyer-received-wrong-item#2
 
-2. Seller response duties
-Query: What must a seller do after a buyer opens a return request?
-Metadata filter: {'audience': 'seller'}
+2. Seller response duties | filter={'audience': 'seller'}
   1. score=0.217181 source_id=seller-return-handling chunk_id=seller-return-handling#1
   2. score=0.083965 source_id=seller-return-handling chunk_id=seller-return-handling#2
   3. score=0.072105 source_id=seller-warranty-obligations chunk_id=seller-warranty-obligations#3
 
-3. Refund timing
-Query: When is the buyer's refund released after a return is approved?
-Metadata filter: {'audience': 'buyer'}
+3. Refund timing | filter={'audience': 'buyer'}
   1. score=0.218424 source_id=buyer-received-wrong-item chunk_id=buyer-received-wrong-item#1
   2. score=0.150901 source_id=buyer-return-request chunk_id=buyer-return-request#2
   3. score=0.127556 source_id=buyer-refund-processing chunk_id=buyer-refund-processing#0
 
-4. Eligible reasons
-Query: Which reasons and evidence can support a return or refund claim?
-Metadata filter: none
+4. Eligible reasons | filter=none
   1. score=0.181924 source_id=buyer-return-request chunk_id=buyer-return-request#4
   2. score=0.162114 source_id=buyer-received-wrong-item chunk_id=buyer-received-wrong-item#2
   3. score=0.151293 source_id=seller-refund-dispute chunk_id=seller-refund-dispute#1
 
-5. Seller shipping
-Query: Who pays return shipping and what should the seller do with the parcel?
-Metadata filter: {'audience': 'seller'}
+5. Seller shipping | filter={'audience': 'seller'}
   1. score=0.274082 source_id=seller-return-handling chunk_id=seller-return-handling#1
   2. score=0.227502 source_id=seller-refund-dispute chunk_id=seller-refund-dispute#0
   3. score=0.017160 source_id=seller-return-handling chunk_id=seller-return-handling#2

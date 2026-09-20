@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from src.chunking import RecursiveChunker
+from src.chunking import SemanticSimilarityChunker
 from src.embeddings import _mock_embed
 from src.models import Document
 from src.store import EmbeddingStore
@@ -40,7 +40,11 @@ def parse_frontmatter(text: str) -> tuple[dict[str, str], str]:
 
 def load_corpus() -> list[Document]:
     documents: list[Document] = []
-    chunker = RecursiveChunker(chunk_size=420)
+    chunker = SemanticSimilarityChunker(
+        embedding_fn=_mock_embed,
+        similarity_threshold=0.35,
+        max_chunk_size=420,
+    )
     for path in sorted(CORPUS_DIR.glob("*.md")):
         metadata, content = parse_frontmatter(path.read_text(encoding="utf-8"))
         if not metadata:
