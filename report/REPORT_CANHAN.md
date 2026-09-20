@@ -1,7 +1,7 @@
 # Báo Cáo Cá Nhân — Lab 7: Embedding & Vector Store
 
-**Họ tên:** Nguyễn Thanh Nam  
-**Nhóm:** K4-L3B  
+**Họ tên:** Nguyễn Thành Nam  
+**Nhóm:** G63 
 **Ngày:** 2026-09-19
 
 ## 1. Khởi động (Warm-up)
@@ -22,7 +22,7 @@ dịch còn 400 và số chunk tăng thành `ceil((10000 - 100) / 400) = 25`.
 Overlap lớn giúp giữ ngữ cảnh ở ranh giới chunk nhưng làm tăng số chunk và
 chi phí embedding.
 
-## 2. Hướng tiếp cận của tôi
+## 2. Hướng tiếp cận
 
 `SentenceChunker` dùng regex nhận diện dấu `.`, `!`, `?` đi trước khoảng trắng
 hoặc xuống dòng, giữ dấu câu rồi gom theo số câu tối đa. Chuỗi rỗng trả về
@@ -74,7 +74,7 @@ không hiểu synonym hay chủ đề. Điều này cho thấy điểm cosine ch
 ngữ nghĩa khi backend embedding được huấn luyện cho ngôn ngữ và nhiệm vụ phù
 hợp; khi dùng mock, benchmark chủ yếu kiểm tra tính đúng và ổn định của pipeline.
 
-## 5. Kết quả truy xuất của tôi
+## 5. Kết quả truy xuất
 
 Bộ benchmark gồm 5 câu hỏi trong `bench.py`; ba câu dùng bộ lọc buyer/seller
 và một câu không lọc. Kết quả đầy đủ được lưu tại `ket_qua_benchmark.txt`.
